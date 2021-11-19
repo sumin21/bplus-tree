@@ -2,6 +2,12 @@ import sys
 import math
 
 
+def checkkey(arr, k):
+    if k in arr:
+        return True
+    return False
+
+
 class Node:
     def __init__(self):
         # each node can have |order - 1| keys
@@ -207,7 +213,93 @@ class B_PLUS_TREE:
                         notLeafNode = p
 
     def delete(self, k):
-        pass
+        # 우선 k가 tree에 있는지 확인 !!
+        node = self.findNode(k)
+
+        if(node == 0):
+            print('None')
+            return
+
+        # 노드 최소 개수 (exceed ~ ) 5->2 아니냐?
+        exceed = math.ceil(self.order/2) - 1
+
+        # root == leaf
+        if(self.root.isRoot and self.root.isLeaf):
+            self.root.keys.remove(k)
+
+        # root != leaf
+        else:
+            # node = leaf
+            node.keys.remove(k)
+
+            # 삭제 후 길이 부족
+            if(len(node.keys) < exceed):
+                p = node.parent
+                nodeIndex = p.subTrees.index(node)
+
+                # node가 첫번째 자식
+                if(nodeIndex == 0):
+                    pp = p.parent
+                    parentIndex = pp.subTrees.index(p)
+
+                    if(parentIndex == 0):
+                        leftSib = None
+                    else:
+                        leftParent = pp.suvbTrees[parentIndex-1]
+                        leftSib = leftParent.subTrees[len(
+                            leftParent.subTrees) - 1]
+
+                # node가 두번째 자식 ~
+                else:
+                    leftSib = p.subTrees[nodeIndex - 1]
+
+                rightSib = node.nextNode  # None 일수도
+
+                # k index
+                index = node.keys.index(k)
+
+                # left에서 못빌림------------
+                if(leftSib == None or (leftSib != None and len(leftSib.keys) == self.order)):
+                    # right에서 못빌림 -> merge
+                    if(rightSib == None or (rightSib != None and len(rightSib.keys) == self.order)):
+
+                        pass
+
+                    # right에서 빌리기
+                    else:
+                        # 안이상한거
+                        if(nodeIndex != (len(p.subTrees)-1)):
+                            right = rightSib.keys[0]
+                            rightSib.keys.remove(right)
+                            node.keys.remove(k)
+                            node.keys.append(right)
+                            p.keys[nodeIndex] = rightSib.keys[0]
+                        pass
+
+                # left에서 빌리기
+                else:
+                    # 안이상한거
+                    if(nodeIndex != 0):
+                        left = leftSib.keys[len(leftSib.keys) - 1]
+                        leftSib.keys.remove(left)
+                        node.keys.remove(k)
+                        node.keys.insert(0, left)
+                        p.keys[nodeIndex-1] = left
+                    pass
+
+            childNode = self.root.subTrees[index]
+            self.root.keys.remove(k)
+
+            # ------------
+            while not childNode.isLeaf:
+                childNode.keys.append(k)
+                childNode.keys.sort()
+                index = childNode.keys.index(k)
+                childNode.keys.remove(k)
+                childNode = childNode.subTrees[index]
+
+            # (end) if(leaf node)
+            # if(childNode.isLeaf):
 
     def print_root(self):
         l = "["
@@ -228,7 +320,35 @@ class B_PLUS_TREE:
         pass
 
     def find(self, k):
-        pass
+        node = self.findNode(k)
+        if(node == 0):
+            print('None')
+        else:
+            print(node.keys)
+
+    def findNode(self, k):
+        node = self.root
+
+        while not node.isLeaf:
+            # k가 node에 있다면
+            if(checkkey(node.keys, k)):
+                index = node.keys.index(k) + 1  # index+1의 subtree
+            else:
+                if k < node.keys[0]:
+                    index = 0
+                else:
+                    node.keys.append(k)
+                    node.keys.sort()
+                    index = node.keys.index(k)
+                    node.keys.remove(k)
+
+            node = node.subTrees[index]
+
+        if node.isLeaf:
+            if checkkey(node.keys, k):
+                return node
+            else:
+                return 0
 
 
 def main():
@@ -264,9 +384,9 @@ def main():
         elif params[0] == "PRINT":
             myTree.print_tree()
 
-        # elif params[0] == "FIND":
-        #     k = int(params[1])
-        #     myTree.find(k)
+        elif params[0] == "FIND":
+            k = int(params[1])
+            myTree.find(k)
 
         # elif params[0] == "RANGE":
         #     k_from = int(params[1])
