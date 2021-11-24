@@ -598,7 +598,7 @@ class B_PLUS_TREE:
                 node.keys[keyIndex] = a
                 print('key 삭제', node.keys)
                 return
-            else:
+            elif len(node.keys) != 0:
                 if k < node.keys[0]:
                     index = 0
                 else:
@@ -606,7 +606,11 @@ class B_PLUS_TREE:
                     node.keys.sort()
                     index = node.keys.index(k)
                     node.keys.remove(k)
-
+            else:
+                if(node.subTrees[0].isLeaf):
+                    break
+                else:
+                    print('이상!')
             node = node.subTrees[index]
         return
 
