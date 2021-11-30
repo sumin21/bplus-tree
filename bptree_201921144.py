@@ -38,6 +38,7 @@ class Node:
         self.nextNode = None
         self.values = []
 
+    # print tree
     def print_childs(self):
         if(len(self.subTrees) > 0):
             print(self.keys, end='-')
@@ -50,6 +51,7 @@ class Node:
             for n in self.subTrees:
                 n.print_childs()
 
+    # keys in leaf nodes
     def printLeafs(self, li):
         if(len(self.subTrees) > 0):
             for n in self.subTrees:
@@ -58,6 +60,7 @@ class Node:
             for key in self.keys:
                 li.append(key)
 
+    # leaf nodes
     def findFakeLeftNode(self, li):
         if(len(self.subTrees) > 0):
             for n in self.subTrees:
@@ -65,14 +68,7 @@ class Node:
         else:
             li.append(self)
 
-    def parents(self):
-        print('!!!')
-        print(self.keys)
-        if self.isRoot:
-            return
-        else:
-            self.parent.parents()
-
+    # first key of tree
     def keyValueFind(self):
         if(self.isLeaf):
             return self.keys[0]
@@ -91,12 +87,11 @@ class B_PLUS_TREE:
 
     def insert(self, k):
 
+        self.root.keys.append(k)
+        self.root.keys.sort()
+
         # root == leaf
         if(self.root.isRoot and self.root.isLeaf):
-            self.root.keys.append(k)
-
-            # sorting
-            self.root.keys.sort()
 
             # len exceed
             if(len(self.root.keys) == self.order):
@@ -132,9 +127,6 @@ class B_PLUS_TREE:
 
         # else
         else:
-            # 반복
-            self.root.keys.append(k)
-            self.root.keys.sort()
             index = self.root.keys.index(k)  # 2
             childNode = self.root.subTrees[index]
             self.root.keys.remove(k)
@@ -285,13 +277,8 @@ class B_PLUS_TREE:
             node.keys.remove(k)
 
             if node.isLeaf and len(node.keys) < exceed:
-                print(node.keys, node.parent.keys)
-                # 삭제 후 길이 부족
-                # if(len(node.keys) < exceed):
                 p = node.parent
-                print(p.keys)
                 nodeIndex = p.subTrees.index(node)
-                print('node index: ', str(nodeIndex))
 
                 leftSib = None
                 rightSib = None
@@ -308,8 +295,6 @@ class B_PLUS_TREE:
                     while not firstLeafNode.isLeaf:
                         firstLeafNode = firstLeafNode.subTrees[0]
 
-                    # firstLeafNode = first Leaf node
-
                     # fakeLeft가 있는 경우
                     if node != firstLeafNode:
                         print('첫번째 아님')
@@ -318,8 +303,6 @@ class B_PLUS_TREE:
                         for leaf in leafs:
                             if(leaf.nextNode == node):
                                 fakeLeftNode = leaf
-                                print('fakeleft')
-                                print(fakeLeftNode.keys)
                                 break
 
                 # node가 마지막 자식 -> 무조건 left랑만
@@ -504,7 +487,6 @@ class B_PLUS_TREE:
                     node.keys.insert(0, pKey)
                     p.keys[nodeIndex-1] = left
 
-                node.parents()
                 node = p
 
                 print('?', node.keys)
@@ -514,6 +496,7 @@ class B_PLUS_TREE:
             if (node.isRoot):
                 if(len(node.keys) == 0):
                     newRoot = node.subTrees[0]
+                    del node  # node 삭제
                     newRoot.isRoot = True
                     newRoot.parent = None
                     self.root = newRoot
@@ -529,7 +512,10 @@ class B_PLUS_TREE:
 
     def print_tree(self):
         node = self.root
-        node.print_childs()
+        if self.root.isLeaf:
+            self.print_root()
+        else:
+            node.print_childs()
 
     def find_range(self, k_from, k_to):
         fromExist = self.findNode(k_from)
