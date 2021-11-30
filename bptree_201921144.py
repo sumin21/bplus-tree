@@ -73,7 +73,8 @@ class Node:
         if(self.isLeaf):
             return self.keys[0]
         else:
-            self.subTrees[0].keyValueFind()
+            result = self.subTrees[0].keyValueFind()
+            return result
 
 
 class B_PLUS_TREE:
@@ -98,13 +99,9 @@ class B_PLUS_TREE:
                 # split index
                 rootSplitIndex = math.floor(self.order/2)
                 rootSplitElement = self.root.keys[rootSplitIndex]
-                print(type(rootSplitElement))
-                print(rootSplitElement)
+
                 leftArr = self.root.keys[0:rootSplitIndex]
                 rightArr = self.root.keys[rootSplitIndex:]
-
-                print(leftArr)
-                print(rightArr)
 
                 self.root.keys = [rootSplitElement]
                 self.root.isLeaf = False
@@ -172,9 +169,6 @@ class B_PLUS_TREE:
                         parentNode.subTrees[index -
                                             1].nextNode = newLeafLeftNode
 
-                    print("check newLeafLeftNode")
-                    print(parentNode.subTrees[index] == newLeafLeftNode)
-
                     # check
                     parentNode.subTrees[index].nextNode = childNode
                     # check
@@ -187,22 +181,15 @@ class B_PLUS_TREE:
                     # test (n이 결관데, n은 leaf 가 아니고 지금 key개수가 오버된 상황)
 
                     notLeafNode = parentNode  # 345
-                    print('notleaf key개수:' + str(len(notLeafNode.keys)))
-                    print(notLeafNode.keys)
-                    kk = 1
 
-                    print('??')
-                    print(childNode.keys, childNode.parent.keys)
                     # overhead
-                    while (len(notLeafNode.keys) >= self.order) and (kk < 10):
-                        kk += 1
+                    while (len(notLeafNode.keys) >= self.order):
                         centerindex = math.floor(len(notLeafNode.keys)/2)  # 1
                         centernum = notLeafNode.keys[centerindex]  # 6
 
                         # parent 있다면
                         if(notLeafNode.parent):
                             p = notLeafNode.parent
-                            print('parent 있어')
                         else:
                             p = Node()
                             p.isRoot = True
@@ -251,15 +238,11 @@ class B_PLUS_TREE:
                         # indexx+2 없으면? (위에도)
                         if(len(p.subTrees) > indexx + 2):
                             notLeafNode.nextNode = p.subTrees[indexx + 2]
-                        print('??')
-                        print(notLeafNode.keys, notLeafNode.parent.keys)
                         notLeafNode = p
 
     def delete(self, k):
         # 우선 k가 tree에 있는지 확인 !!
         node = self.findNode(k)[0]
-        print('delete의 node')
-        print(node.keys)
         if(node == 0):
             print('None')
             return
@@ -287,7 +270,6 @@ class B_PLUS_TREE:
 
                 # node가 첫번째 자식 -> 무조건 right랑만
                 if(nodeIndex == 0):
-                    print('1번째 노드')
                     leftSib = None
                     rightSib = p.subTrees[1]
                     firstLeafNode = self.root
@@ -297,7 +279,6 @@ class B_PLUS_TREE:
 
                     # fakeLeft가 있는 경우
                     if node != firstLeafNode:
-                        print('첫번째 아님')
                         leafs = []
                         self.root.findFakeLeftNode(leafs)
                         for leaf in leafs:
@@ -307,14 +288,12 @@ class B_PLUS_TREE:
 
                 # node가 마지막 자식 -> 무조건 left랑만
                 elif(nodeIndex == len(p.subTrees)-1):
-                    print('마지막 노드')
                     rightSib = None
                     leftSib = p.subTrees[len(p.subTrees) - 1]
                     fakeRightNode = node.nextNode
 
                 # node가 가운데 자식 -> left, right 가능
                 else:
-                    print('가운데 노드')
                     leftSib = p.subTrees[nodeIndex - 1]
                     rightSib = node.nextNode  # None 일수도
 
@@ -324,7 +303,6 @@ class B_PLUS_TREE:
                     if(rightSib == None or (rightSib != None and len(rightSib.keys) <= exceed)):
                         # right랑 merge (left 없)
                         if(leftSib == None):
-                            print('11')
                             newRightKeys = plusList(
                                 node.keys, rightSib.keys)  # 8 10 11
                             rightSib.keys = newRightKeys
@@ -335,7 +313,6 @@ class B_PLUS_TREE:
                                 fakeLeftNode.nextNode = rightSib
                         # left랑 merge (right 없)
                         elif(rightSib == None):
-                            print('22')
 
                             newLeftKeys = plusList(leftSib.keys, node.keys)
                             leftSib.keys = newLeftKeys
@@ -348,19 +325,15 @@ class B_PLUS_TREE:
                                 leftSib.nextNode = fakeRightNode
                         # left랑 merge (가운데 node)
                         else:
-                            print('33')
-
                             newLeftKeys = plusList(leftSib.keys, node.keys)
                             leftSib.keys = newLeftKeys
                             p.subTrees.remove(node)
-                            print(newLeftKeys, p.keys)
                             del p.keys[nodeIndex-1]
 
                             leftSib.nextNode = rightSib
 
                     # right에서 빌리기
                     else:
-                        print('44')
 
                         right = rightSib.keys[0]
                         rightSib.keys.remove(right)
@@ -370,7 +343,6 @@ class B_PLUS_TREE:
 
                 # left에서 빌리기
                 else:
-                    print('55')
 
                     left = leftSib.keys[len(leftSib.keys) - 1]
                     leftSib.keys.remove(left)
@@ -379,14 +351,12 @@ class B_PLUS_TREE:
                     p.keys[nodeIndex-1] = left
 
                 node = p
-                print(node.keys, p.keys)
 
             # remove k in key
             self.deleteNode(k)
 
             while(not node.isLeaf and len(node.keys) < exceed and not node.isRoot):
                 p = node.parent
-                print('node의 parent', p.keys)
                 nodeIndex = p.subTrees.index(node)  # 1
 
                 leftSib = None
@@ -394,19 +364,16 @@ class B_PLUS_TREE:
 
                 # node가 첫번째 자식 -> 무조건 right랑만
                 if(nodeIndex == 0):
-                    print('1번째 노드')
                     rightSib = p.subTrees[1]
                     leftSib = None
 
                 # node가 마지막 자식 -> 무조건 left랑만
                 elif(nodeIndex == len(p.subTrees)-1):
-                    print('마지막 노드')
                     leftSib = p.subTrees[len(p.subTrees) - 2]
                     rightSib = None
 
                 # node가 가운데 자식 -> left, right 가능
                 else:
-                    print('가운데 노드')
                     leftSib = p.subTrees[nodeIndex - 1]
                     rightSib = node.nextNode  # None 일수도
 
@@ -416,10 +383,7 @@ class B_PLUS_TREE:
                     if rightSib == None or (rightSib != None and len(rightSib.keys) <= exceed):
                         # right랑 merge (left 없)
                         if(leftSib == None):
-                            print('11')
-
                             pKey = p.keys[nodeIndex]
-                            print('0이어야 함' + str(nodeIndex))
 
                             node.keys.append(pKey)
                             newRightKeys = plusList(node.keys, rightSib.keys)
@@ -436,16 +400,10 @@ class B_PLUS_TREE:
 
                         # left랑 merge (right 없)
                         else:
-                            print('22')
-                            print(nodeIndex)
                             pKey = p.keys[nodeIndex - 1]
-                            print(pKey)
                             node.keys.insert(0, pKey)
-                            print(node.keys)
-                            print('???', leftSib.keys)
 
                             newLeftKeys = plusList(leftSib.keys, node.keys)
-                            print(newLeftKeys)
                             p.subTrees.remove(node)
                             leftSib.keys = newLeftKeys
                             for nodeSub in node.subTrees:
@@ -455,12 +413,9 @@ class B_PLUS_TREE:
                             leftSib.subTrees = newLeftSubs
 
                             p.keys.remove(pKey)  # root []
-                            print('??', p.keys, leftSib.keys)
 
                     # right에서 빌리기
                     else:
-                        print('44')
-
                         right = rightSib.keys[0]
                         rightSib.keys.remove(right)
                         rightSub = rightSib.subTrees[0]
@@ -474,7 +429,6 @@ class B_PLUS_TREE:
 
                 # left에서 빌리기
                 else:
-                    print('55')
 
                     left = leftSib.keys[len(leftSib.keys) - 1]
                     leftSib.keys.remove(left)
@@ -488,8 +442,6 @@ class B_PLUS_TREE:
                     p.keys[nodeIndex-1] = left
 
                 node = p
-
-                print('?', node.keys)
             # root = []
 
             # root
@@ -507,8 +459,6 @@ class B_PLUS_TREE:
             l += "{},".format(k)
         l = l[:-1] + "]"
         print(l)
-    # def print_parent(self):
-    #     node = self.root
 
     def print_tree(self):
         node = self.root
@@ -582,7 +532,6 @@ class B_PLUS_TREE:
 
                 a = kChildNode.keyValueFind()
                 node.keys[keyIndex] = a
-                print('key 삭제', node.keys)
                 return
             elif len(node.keys) != 0:
                 if k < node.keys[0]:
@@ -595,8 +544,6 @@ class B_PLUS_TREE:
             else:
                 if(node.subTrees[0].isLeaf):
                     break
-                else:
-                    print('이상!')
             node = node.subTrees[index]
         return
 
