@@ -17,24 +17,11 @@ def plusList(arr1, arr2):
 
 class Node:
     def __init__(self):
-        # each node can have |order - 1| keys
         self.keys = []
-
-        # |order| / 2 <= # of subTree pointers <= |order|
-        # [node1, node2]
         self.subTrees = []
-
-        # pointer of parent
         self.parent = None
-
-        # leafnode is true / false
         self.isLeaf = False
-
-        # rootnode is true / false
         self.isRoot = False
-
-        # if(leafnode)
-        # leaf node has next node pointer
         self.nextNode = None
         self.values = []
 
@@ -42,7 +29,6 @@ class Node:
     def print_childs(self):
         if(len(self.subTrees) > 0):
             print(self.keys, end='-')
-
             for n in self.subTrees:
                 if(n != self.subTrees[len(self.subTrees) - 1]):
                     print(n.keys, end=',')
@@ -50,15 +36,6 @@ class Node:
                     print(n.keys, end='\n')
             for n in self.subTrees:
                 n.print_childs()
-
-    # keys in leaf nodes
-    def printLeafs(self, li):
-        if(len(self.subTrees) > 0):
-            for n in self.subTrees:
-                n.printLeafs(li)
-        else:
-            for key in self.keys:
-                li.append(key)
 
     # leaf nodes
     def findFakeLeftNode(self, li):
@@ -86,159 +63,140 @@ class B_PLUS_TREE:
         self.root.isLeaf = True
         self.root.isRoot = True
 
+    def thals(self, node, child):
+        fakeLeftNode = None
+        firstLeafNode = self.root
+
+        while not firstLeafNode.isLeaf:
+            firstLeafNode = firstLeafNode.subTrees[0]
+
+        # fakeLeft가 있는 경우
+        if node != firstLeafNode:
+            leafs = []
+            self.root.findFakeLeftNode(leafs)
+
+            for leaf in leafs:
+                if(leaf.nextNode == child):
+                    fakeLeftNode = leaf
+                    break
+        return fakeLeftNode
+
     def insert(self, k):
+        index = 0
 
-        self.root.keys.append(k)
-        self.root.keys.sort()
-
-        # root == leaf
         if(self.root.isRoot and self.root.isLeaf):
+            childNode = self.root
 
-            # len exceed
-            if(len(self.root.keys) == self.order):
-                # split index
-                rootSplitIndex = math.floor(self.order/2)
-                rootSplitElement = self.root.keys[rootSplitIndex]
-
-                leftArr = self.root.keys[0:rootSplitIndex]
-                rightArr = self.root.keys[rootSplitIndex:]
-
-                self.root.keys = [rootSplitElement]
-                self.root.isLeaf = False
-
-                # new Leaf Left Node
-                newLeafLeftNode = Node()
-                newLeafLeftNode.isLeaf = True
-                newLeafLeftNode.parent = self.root
-                newLeafLeftNode.keys = leftArr
-
-                # new Leaf Right Node
-                newLeafRightNode = Node()
-                newLeafRightNode.isLeaf = True
-                newLeafRightNode.parent = self.root
-                newLeafRightNode.keys = rightArr
-
-                newLeafLeftNode.nextNode = newLeafRightNode
-
-                self.root.subTrees = [newLeafLeftNode, newLeafRightNode]
-
-        # else
         else:
+            self.root.keys.append(k)
+            self.root.keys.sort()
             index = self.root.keys.index(k)  # 2
             childNode = self.root.subTrees[index]
             self.root.keys.remove(k)
 
-            # ------------
-            while not childNode.isLeaf:
-                childNode.keys.append(k)
-                childNode.keys.sort()
-                index = childNode.keys.index(k)
-                childNode.keys.remove(k)
-                childNode = childNode.subTrees[index]
+        while not childNode.isLeaf:
+            childNode.keys.append(k)
+            childNode.keys.sort()
+            index = childNode.keys.index(k)
+            childNode.keys.remove(k)
+            childNode = childNode.subTrees[index]
 
-            # (end) if(leaf node)
-            if(childNode.isLeaf):
-                childNode.keys.append(k)
-                childNode.keys.sort()  # 568
+        # (end) if(leaf node)
+        if(childNode.isLeaf):
+            childNode.keys.append(k)
+            childNode.keys.sort()  # 568
+            childNode.values.append(k)
 
-                # leaf len exceed
-                if(len(childNode.keys) == self.order):
-                    splitIndex = math.floor(len(childNode.keys)/2)  # 1
+            # leaf len exceed
+            if(len(childNode.keys) == self.order):
+                splitIndex = math.floor(self.order/2)  # 1
+                parentNode = None
+
+                if(childNode.isRoot):
+                    parentNode = Node()
+                    parentNode.isRoot = True
+                    childNode.isRoot = False
+                    self.root = parentNode
+                    childNode.parent = parentNode
+                    parentNode.subTrees.append(childNode)
+
+                else:
                     parentNode = childNode.parent  # root+1
 
-                    # center into parentNode
-                    parentNode.keys.append(
-                        childNode.keys[splitIndex])  # root = 345
-                    parentNode.keys.sort()  # 이렇게 안하고 index 에 바로 넣어도 됨
+                # center into parentNode
+                parentNode.keys.append(
+                    childNode.keys[splitIndex])  # root = 345
+                parentNode.keys.sort()  # 이렇게 안하고 index 에 바로 넣어도 됨
 
-                    leftArr = childNode.keys[0:splitIndex]  # 4
-                    rightArr = childNode.keys[splitIndex:]  # 56
+                # new Leaf Left Node
+                newLeafLeftNode = Node()
+                newLeafLeftNode.isLeaf = True
+                newLeafLeftNode.parent = parentNode
+                newLeafLeftNode.keys = childNode.keys[0:splitIndex]
+
+                newLeafLeftNode.values = childNode.values[0:splitIndex]
+
+                # new Leaf Right Node
+                childNode.keys = childNode.keys[splitIndex:]
+                childNode.values = childNode.values[splitIndex:]
+
+                parentNode.subTrees.insert(index, newLeafLeftNode)
+
+                fakeLeftNode = self.thals(newLeafLeftNode, childNode)
+
+                if(fakeLeftNode != None):
+                    fakeLeftNode.nextNode = newLeafLeftNode
+
+                # check
+                newLeafLeftNode.nextNode = childNode
+
+                notLeafNode = parentNode  # 345
+
+                # overhead
+                while (len(notLeafNode.keys) >= self.order):
+                    centerindex = math.floor(len(notLeafNode.keys)/2)  # 1
+                    centernum = notLeafNode.keys[centerindex]  # 6
+
+                    # parent 있다면
+                    if(notLeafNode.parent):
+                        p = notLeafNode.parent
+                    else:
+                        p = Node()
+                        p.isRoot = True
+                        self.root = p
+                        notLeafNode.isRoot = False
+                        notLeafNode.parent = p
+                        p.subTrees.append(notLeafNode)
+
+                    leftArr = notLeafNode.keys[0:centerindex]  # 3
+                    rightArr = notLeafNode.keys[centerindex+1:]  # 5
+
+                    # 12, 3
+                    leftSubArr = notLeafNode.subTrees[0:centerindex+1]
+                    # 4, 56
+                    rightSubArr = notLeafNode.subTrees[centerindex+1:]
+
+                    notLeafNode.keys.remove(centernum)  # 35
 
                     # new Leaf Left Node
-                    newLeafLeftNode = Node()
-                    newLeafLeftNode.isLeaf = True
-                    newLeafLeftNode.parent = parentNode
-                    newLeafLeftNode.keys = leftArr
+                    newLeftNode = Node()
+                    newLeftNode.parent = p
+                    newLeftNode.keys = leftArr
+
+                    newLeftNode.subTrees = leftSubArr
+                    for leftSubs in leftSubArr:
+                        leftSubs.parent = newLeftNode
 
                     # new Leaf Right Node
-                    childNode.keys = rightArr
-                    childNode.parent = parentNode
+                    notLeafNode.keys = rightArr
+                    notLeafNode.subTrees = rightSubArr
 
-                    parentNode.subTrees.insert(index, newLeafLeftNode)
-                    if(index != 0):
-                        parentNode.subTrees[index -
-                                            1].nextNode = newLeafLeftNode
+                    p.keys.append(centernum)  # 4
+                    p.keys.sort()
+                    indexx = p.keys.index(centernum)  # 0
+                    p.subTrees.insert(indexx, newLeftNode)
 
-                    # check
-                    parentNode.subTrees[index].nextNode = childNode
-                    # check
-                    # indexx+2 없으면? (위에도)
-                    if(len(parentNode.subTrees) > index + 2):
-                        childNode.nextNode = parentNode.subTrees[index+2]
-
-                    # 완성 --- parentNode = leaf+1 -------- childNode = leaf
-
-                    # test (n이 결관데, n은 leaf 가 아니고 지금 key개수가 오버된 상황)
-
-                    notLeafNode = parentNode  # 345
-
-                    # overhead
-                    while (len(notLeafNode.keys) >= self.order):
-                        centerindex = math.floor(len(notLeafNode.keys)/2)  # 1
-                        centernum = notLeafNode.keys[centerindex]  # 6
-
-                        # parent 있다면
-                        if(notLeafNode.parent):
-                            p = notLeafNode.parent
-                        else:
-                            p = Node()
-                            p.isRoot = True
-                            self.root = p
-                            notLeafNode.isRoot = False
-                            p.subTrees.append(notLeafNode)
-
-                        leftArr = notLeafNode.keys[0:centerindex]  # 3
-                        rightArr = notLeafNode.keys[centerindex+1:]  # 5
-
-                        # 12, 3
-                        leftSubArr = notLeafNode.subTrees[0:centerindex+1]
-                        # 4, 56
-                        rightSubArr = notLeafNode.subTrees[centerindex+1:]
-
-                        notLeafNode.keys.remove(centernum)  # 35
-
-                        # new Leaf Left Node
-                        newLeftNode = Node()
-                        newLeftNode.isLeaf = False
-                        newLeftNode.parent = p
-                        newLeftNode.keys = leftArr
-
-                        newLeftNode.subTrees = leftSubArr
-                        for leftSubs in leftSubArr:
-                            leftSubs.parent = newLeftNode
-
-                        # new Leaf Right Node
-                        notLeafNode.keys = rightArr
-                        notLeafNode.parent = p
-                        notLeafNode.isLeaf = False
-                        notLeafNode.subTrees = rightSubArr
-
-                        for rightSubs in rightSubArr:
-                            rightSubs.parent = notLeafNode
-
-                        p.keys.append(centernum)  # 4
-                        p.keys.sort()
-                        indexx = p.keys.index(centernum)  # 0
-                        p.subTrees.insert(indexx, newLeftNode)
-
-                        if(indexx != 0):
-                            p.subTrees[indexx - 1].nextNode = newLeftNode
-                        newLeftNode.nextNode = notLeafNode
-
-                        # indexx+2 없으면? (위에도)
-                        if(len(p.subTrees) > indexx + 2):
-                            notLeafNode.nextNode = p.subTrees[indexx + 2]
-                        notLeafNode = p
+                    notLeafNode = p
 
     def delete(self, k):
         # 우선 k가 tree에 있는지 확인 !!
@@ -272,19 +230,8 @@ class B_PLUS_TREE:
                 if(nodeIndex == 0):
                     leftSib = None
                     rightSib = p.subTrees[1]
-                    firstLeafNode = self.root
 
-                    while not firstLeafNode.isLeaf:
-                        firstLeafNode = firstLeafNode.subTrees[0]
-
-                    # fakeLeft가 있는 경우
-                    if node != firstLeafNode:
-                        leafs = []
-                        self.root.findFakeLeftNode(leafs)
-                        for leaf in leafs:
-                            if(leaf.nextNode == node):
-                                fakeLeftNode = leaf
-                                break
+                    fakeLeftNode = self.thals(node, node)
 
                 # node가 마지막 자식 -> 무조건 left랑만
                 elif(nodeIndex == len(p.subTrees)-1):
@@ -311,26 +258,21 @@ class B_PLUS_TREE:
 
                             if(fakeLeftNode):
                                 fakeLeftNode.nextNode = rightSib
-                        # left랑 merge (right 없)
+                        # left랑 merge
                         elif(rightSib == None):
 
                             newLeftKeys = plusList(leftSib.keys, node.keys)
                             leftSib.keys = newLeftKeys
                             p.subTrees.remove(node)
-                            pKeyLen = len(p.keys)
-                            del p.keys[pKeyLen-1]
 
-                            leftSib.nextNode = None
-                            if(fakeRightNode):
-                                leftSib.nextNode = fakeRightNode
-                        # left랑 merge (가운데 node)
-                        else:
-                            newLeftKeys = plusList(leftSib.keys, node.keys)
-                            leftSib.keys = newLeftKeys
-                            p.subTrees.remove(node)
                             del p.keys[nodeIndex-1]
 
-                            leftSib.nextNode = rightSib
+                            if(rightSib):
+                                leftSib.nextNode = rightSib
+                            else:
+                                leftSib.nextNode = None
+                                if(fakeRightNode):
+                                    leftSib.nextNode = fakeRightNode
 
                     # right에서 빌리기
                     else:
@@ -468,18 +410,28 @@ class B_PLUS_TREE:
             node.print_childs()
 
     def find_range(self, k_from, k_to):
-        fromExist = self.findNode(k_from)
-        toExist = self.findNode(k_to)
+        fromExist = self.findNode(k_from)[0]
+        toExist = self.findNode(k_to)[0]
         if(fromExist and toExist):
             li = []
-            self.root.printLeafs(li)
+            while fromExist != toExist:
+                for key in fromExist.keys:
+                    li.append(key)
+
+                fromExist = fromExist.nextNode
+                print(fromExist.keys)
+
+            if fromExist == toExist:
+                for key in toExist.keys:
+                    li.append(key)
+            print('range')
+            print(li)
+
             fromIndex = li.index(k_from)
             toIndex = li.index(k_to)
-            for i in range(fromIndex, toIndex + 1):
-                if(i == toIndex):
-                    print(li[i], end='\n')
-                else:
-                    print(li[i], end=',')
+            for i in range(fromIndex, toIndex):
+                print(li[i], end=',')
+            print(li[toIndex], end='\n')
 
         else:
             print("존재하지 않음")
